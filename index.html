@@ -1,12 +1,88 @@
-<script type="module">
-        // 1. Importar as funções do Firebase via CDN (Web)
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interno - Vendas</title>
+    <style>
+        /* --- ESTILOS (CSS) --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Helvetica, Arial, sans-serif; }
+        body { background-color: #d1d7db; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .app-container { display: flex; width: 95%; height: 95vh; background-color: #fff; box-shadow: 0 1px 1px 0 rgba(0,0,0,.06), 0 2px 5px 0 rgba(0,0,0,.2); overflow: hidden; }
+        
+        /* BARRA LATERAL */
+        .sidebar { width: 30%; border-right: 1px solid #e9edef; display: flex; flex-direction: column; background-color: #fff; }
+        .header { height: 60px; background-color: #f0f2f5; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #d1d7db; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background-color: #ccc; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #555; }
+        .chat-list { flex: 1; overflow-y: auto; background-color: #fff; }
+        .chat-item { display: flex; align-items: center; padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f0f2f5; }
+        .chat-item:hover { background-color: #f5f6f6; }
+        .chat-info { margin-left: 15px; }
+        .chat-name { font-weight: bold; font-size: 16px; color: #111b21; }
+        .chat-last-msg { font-size: 13px; color: #667781; margin-top: 3px; }
+
+        /* ÁREA DE CHAT */
+        .chat-window { width: 70%; display: flex; flex-direction: column; background-color: #efeae2; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat; background-size: 400px; }
+        .messages-area { flex: 1; padding: 20px 50px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        .message { max-width: 60%; padding: 8px 12px; border-radius: 8px; font-size: 14.2px; line-height: 19px; position: relative; box-shadow: 0 1px .5px rgba(0,0,0,.13); word-wrap: break-word; }
+        .message.received { align-self: flex-start; background-color: #fff; border-top-left-radius: 0; }
+        .message.sent { align-self: flex-end; background-color: #d9fdd3; border-top-right-radius: 0; }
+        .msg-time { display: block; text-align: right; font-size: 10px; color: #999; margin-top: 4px; }
+
+        .footer { height: 62px; background-color: #f0f2f5; padding: 10px; display: flex; align-items: center; gap: 10px; }
+        .input-box { flex: 1; height: 40px; border: none; border-radius: 8px; padding: 10px; font-size: 15px; outline: none; }
+        .btn-send { border: none; background: none; cursor: pointer; font-size: 20px; color: #54656f; padding: 10px;}
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="header">
+                <div class="user-avatar">👤</div>
+                <span>Minha Conta</span>
+            </div>
+            <div class="chat-list">
+                <div class="chat-item">
+                    <div class="user-avatar" style="background-color: #ddd;">🏢</div>
+                    <div class="chat-info">
+                        <div class="chat-name">Chat Geral da Loja</div>
+                        <div class="chat-last-msg">Mensagens em tempo real...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-window">
+            <div class="header">
+                <div class="user-avatar">🏢</div>
+                <div class="chat-info">
+                    <div class="chat-name">Chat Geral</div>
+                    <span style="font-size: 12px; color: gray;">Online</span>
+                </div>
+            </div>
+
+            <div class="messages-area" id="messagesArea">
+                </div>
+
+            <div class="footer">
+                <input type="text" class="input-box" placeholder="Digite uma mensagem" id="messageInput">
+                <button class="btn-send" id="btnSend">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // 2. SUA CONFIGURAÇÃO (Já com suas chaves reais)
+        // SUA CONFIGURAÇÃO CORRIGIDA (Adicionei o databaseURL que estava faltando)
         const firebaseConfig = {
             apiKey: "AIzaSyDZernZOtFF1msD87Ddt0wVpAL8efVQtpM",
             authDomain: "chat-4540d.firebaseapp.com",
+            // A LINHA ABAIXO FOI A QUE EU ADICIONEI PARA CORRIGIR O ERRO AMARELO:
+            databaseURL: "https://chat-4540d-default-rtdb.firebaseio.com",
             projectId: "chat-4540d",
             storageBucket: "chat-4540d.firebasestorage.app",
             messagingSenderId: "440017432142",
@@ -17,59 +93,55 @@
         // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-        const chatRef = ref(database, "mensagens"); // Pasta onde as msgs ficam salvas
+        const chatRef = ref(database, "mensagens");
 
         // Elementos da tela
         const messageInput = document.getElementById("messageInput");
         const btnSend = document.getElementById("btnSend");
         const messagesArea = document.getElementById("messagesArea");
 
-        // --- FUNÇÃO 1: ENVIAR MENSAGEM ---
+        // Função Enviar
         function enviarMensagem() {
             const texto = messageInput.value;
-            
             if (texto.trim() === "") return; 
 
-            // Salva no banco de dados do Google
             push(chatRef, {
-                // Truque rápido: Gera um nome aleatório ou usa um fixo por enquanto
                 nome: "Usuario " + Math.floor(Math.random() * 100), 
                 texto: texto,
                 horario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                id: "id-" + Date.now() // Identificador único da mensagem
+                id: "id-" + Date.now() 
             });
 
-            messageInput.value = ""; // Limpa o campo
+            messageInput.value = ""; 
         }
 
-        // --- FUNÇÃO 2: RECEBER MENSAGENS (Ouvinte) ---
+        // Função Receber
         onChildAdded(chatRef, (snapshot) => {
             const dados = snapshot.val();
             criarBalaoNaTela(dados.texto, dados.horario, dados.nome);
         });
 
-        // Função visual para desenhar o balão
         function criarBalaoNaTela(texto, horario, nomeUser) {
             const div = document.createElement("div");
-            
-            // Lógica simples: vamos pintar todos de verde por enquanto para testar
-            // Depois faremos a lógica de saber quem é quem
-            div.classList.add("message", "sent");
-            
+            div.classList.add("message", "sent"); // Por enquanto tudo verde
             div.innerHTML = `
                 <strong style="font-size:11px; display:block; color: #555;">${nomeUser}</strong>
                 ${texto}
                 <span class="msg-time">${horario}</span>
             `;
-            
             messagesArea.appendChild(div);
             messagesArea.scrollTop = messagesArea.scrollHeight; 
         }
 
-        // Eventos
-        btnSend.addEventListener("click", enviarMensagem);
-        messageInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") enviarMensagem();
-        });
-
+        // CORREÇÃO DO ERRO VERMELHO: Verificamos se o botão existe antes de adicionar o evento
+        if (btnSend && messageInput) {
+            btnSend.addEventListener("click", enviarMensagem);
+            messageInput.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") enviarMensagem();
+            });
+        } else {
+            console.error("Erro: Não encontrei o botão ou o input na tela.");
+        }
     </script>
+</body>
+</html>
