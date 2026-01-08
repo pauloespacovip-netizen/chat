@@ -1,0 +1,75 @@
+<script type="module">
+        // 1. Importar as funções do Firebase via CDN (Web)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 2. SUA CONFIGURAÇÃO (Já com suas chaves reais)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZernZOtFF1msD87Ddt0wVpAL8efVQtpM",
+            authDomain: "chat-4540d.firebaseapp.com",
+            projectId: "chat-4540d",
+            storageBucket: "chat-4540d.firebasestorage.app",
+            messagingSenderId: "440017432142",
+            appId: "1:440017432142:web:a27f37b3f9574b551c1d1f",
+            measurementId: "G-6S29LMK7KX"
+        };
+
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const chatRef = ref(database, "mensagens"); // Pasta onde as msgs ficam salvas
+
+        // Elementos da tela
+        const messageInput = document.getElementById("messageInput");
+        const btnSend = document.getElementById("btnSend");
+        const messagesArea = document.getElementById("messagesArea");
+
+        // --- FUNÇÃO 1: ENVIAR MENSAGEM ---
+        function enviarMensagem() {
+            const texto = messageInput.value;
+            
+            if (texto.trim() === "") return; 
+
+            // Salva no banco de dados do Google
+            push(chatRef, {
+                // Truque rápido: Gera um nome aleatório ou usa um fixo por enquanto
+                nome: "Usuario " + Math.floor(Math.random() * 100), 
+                texto: texto,
+                horario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                id: "id-" + Date.now() // Identificador único da mensagem
+            });
+
+            messageInput.value = ""; // Limpa o campo
+        }
+
+        // --- FUNÇÃO 2: RECEBER MENSAGENS (Ouvinte) ---
+        onChildAdded(chatRef, (snapshot) => {
+            const dados = snapshot.val();
+            criarBalaoNaTela(dados.texto, dados.horario, dados.nome);
+        });
+
+        // Função visual para desenhar o balão
+        function criarBalaoNaTela(texto, horario, nomeUser) {
+            const div = document.createElement("div");
+            
+            // Lógica simples: vamos pintar todos de verde por enquanto para testar
+            // Depois faremos a lógica de saber quem é quem
+            div.classList.add("message", "sent");
+            
+            div.innerHTML = `
+                <strong style="font-size:11px; display:block; color: #555;">${nomeUser}</strong>
+                ${texto}
+                <span class="msg-time">${horario}</span>
+            `;
+            
+            messagesArea.appendChild(div);
+            messagesArea.scrollTop = messagesArea.scrollHeight; 
+        }
+
+        // Eventos
+        btnSend.addEventListener("click", enviarMensagem);
+        messageInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") enviarMensagem();
+        });
+
+    </script>
